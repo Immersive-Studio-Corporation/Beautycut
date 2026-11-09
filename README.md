@@ -1,104 +1,371 @@
-# BeautyCut
+# ✦ BeautyCut
 
-BeautyCut est une application Windows de traitement vidéo local. Le projet commence par l'étape 1 de la feuille de route : inspection des médias par FFprobe et export configurable par FFmpeg. Il n'utilise ni compte, ni service distant, ni API, ni filigrane.
+### Recadrez. Optimisez. Exportez.
 
-## Fonctions disponibles dans cette version
+**BeautyCut** est une application de bureau Windows dédiée au recadrage et à l'exportation vidéo en local. Pensée pour simplifier la préparation de contenus destinés aux réseaux sociaux, elle permet de transformer rapidement une vidéo en différents formats, sans compte, sans service distant et sans filigrane.
 
-- Importer un fichier par glisser-déposer ou depuis l'explorateur Windows. L'application laisse FFprobe reconnaître le contenu réel du fichier ; elle ne se limite pas à l'extension.
-- Lire les informations du conteneur, de la durée, de la résolution, de la cadence et des pistes audio/vidéo.
-- Vérifier la présence des décodeurs FFmpeg et afficher les pistes audio multiples.
-- Afficher une image repère originale et une image recadrée calculées localement par FFmpeg.
-- Exporter en MP4, MOV, MKV ou WebM, avec les encodeurs réellement présents dans la version locale de FFmpeg.
-- Choisir un format vertical 9:16 commun à TikTok, Reels, Shorts et Stories, ou un format portrait 4:5, carré 1:1, paysage 16:9 ou une résolution personnalisée.
-- Repositionner le cadre directement à la souris dans l’image originale, utiliser neuf points d’ancrage, régler les curseurs, zoomer jusqu’à 200 %, ou conserver toute l’image avec des bandes.
-- Appliquer les presets de qualité recommandée, haute qualité, fichier léger ou qualité personnalisée.
-- Choisir la vitesse d’encodage rapide, équilibrée ou orientée compression, la qualité, un débit, une cadence et les codecs audio/vidéo.
-- Suivre l’export avec une barre animée pendant la préparation, le pourcentage, la durée traitée, le temps écoulé, une estimation restante, la vitesse et la taille du fichier.
-- Vérifier les versions publiées à chaque lancement, télécharger l’installeur depuis HTTPS, contrôler son empreinte SHA-256, puis l’installer et relancer BeautyCut automatiquement.
-- Utiliser une fenêtre redimensionnable : les aperçus se réorganisent en colonne sur les petites largeurs et les panneaux restent accessibles par défilement.
-- Choisir parmi 20 thèmes nature, océan et cosmos, mémorisés entre les lancements, avec un défilement animé dans les panneaux.
-- Découper les vidéos en parties numérotées pendant le recadrage et l’export, avec des préréglages TikTok, Instagram Reels et YouTube Shorts en secondes et en minutes, et toute durée personnalisée de 1 seconde à 24 heures.
-- Conserver une marge d’une seconde par segment pour rester sous la limite sélectionnée. Les segments terminés restent disponibles si l’export est annulé ; la partie en cours est supprimée.
-- Conserver toutes les pistes audio dans l'export et normaliser la cadence seulement si l'utilisateur choisit une cadence de sortie.
-- Annuler un export sans laisser de fichier de sortie partiel.
-- Ajuster la position d'un recadrage statique. Le suivi automatique du sujet, le lecteur vidéo et la timeline sont les étapes suivantes de la feuille de route ; ils ne sont pas présentés comme disponibles dans cette version.
-- Utiliser les encodeurs NVENC quand FFmpeg les expose ; libx264/libx265 restent disponibles en solution logicielle.
+Développé par **Immersive Studio Corporation**, BeautyCut s'appuie sur FFmpeg et FFprobe pour offrir un traitement vidéo local, configurable et performant.
 
-## Pré-requis
+<p align="center">
+  <img src="assets/beautycut_logo.png" alt="BeautyCut" width="420">
+</p>
 
-- Windows 10/11 x64.
-- Python 3.10 ou plus récent.
-- FFmpeg et FFprobe dans le `PATH`, dans `bin\` à côté du projet, ou définis par `BEAUTYCUT_FFMPEG` et `BEAUTYCUT_FFPROBE`.
-- Pour l'accélération NVIDIA, un pilote compatible et une compilation FFmpeg contenant les encodeurs NVENC.
+<p align="center">
+  <strong>100 % local · Sans filigrane · Formats multiples · Export configurable</strong>
+</p>
 
-BeautyCut découvre les encodeurs à l'exécution. Les formats et codecs proposés dépendent de la compilation FFmpeg installée ; un codec d'entrée absent des décodeurs est signalé avant export.
+---
 
-Le profil Rapide privilégie le temps d'encodage sur les vidéos longues ; sa compression peut produire un fichier plus volumineux. Les médias sont traités en flux par FFmpeg, sans charger la vidéo entière en mémoire. Les métadonnées déjà lues à l'import sont réutilisées pour éviter une seconde analyse inutile.
+## ✨ Fonctionnalités
 
-## Installation et lancement
+### 🎬 Importation et analyse des médias
+
+- Importation de vidéos et fichiers audio.
+- Glisser-déposer ou sélection depuis l'explorateur Windows.
+- Analyse automatique avec FFprobe.
+- Détection du conteneur, de la durée et de la résolution.
+- Identification de la cadence et des codecs.
+- Détection des pistes audio et vidéo multiples.
+- Vérification des décodeurs et encodeurs disponibles.
+
+### 📐 Recadrage vidéo
+
+Préparez vos vidéos pour différentes plateformes et proportions :
+
+| Format | Ratio | Utilisation |
+|---|---|---|
+| Vertical | 9:16 | TikTok, Reels, Shorts, Stories |
+| Portrait | 4:5 | Publications Instagram |
+| Carré | 1:1 | Publications carrées |
+| Paysage | 16:9 | Vidéos classiques |
+| Personnalisé | Libre | Dimensions personnalisées |
+
+Outils de cadrage disponibles :
+
+- Déplacement direct du cadre à la souris.
+- Neuf points d'ancrage rapides.
+- Ajustement horizontal et vertical.
+- Zoom réglable jusqu'à 200 %.
+- Recentrage et réinitialisation.
+- Plusieurs modes de remplissage.
+- Conservation de l'image entière avec bandes.
+
+### ⚙️ Exportation configurable
+
+BeautyCut propose plusieurs paramètres pour adapter les exports aux besoins de chaque utilisateur.
+
+**Formats de sortie :**
+- MP4
+- MOV
+- MKV
+- WebM
+
+**Qualité :**
+- Qualité recommandée.
+- Haute qualité.
+- Fichier plus léger.
+- Qualité personnalisée.
+
+**Encodage :**
+- Mode rapide.
+- Mode équilibré.
+- Mode orienté compression.
+- Réglage de la qualité vidéo.
+- Réglage du débit.
+- Choix de la cadence de sortie.
+- Sélection des codecs audio et vidéo.
+
+BeautyCut utilise les encodeurs disponibles dans l'installation locale de FFmpeg, notamment NVIDIA NVENC lorsque celui-ci est compatible.
+
+### 📊 Suivi des exportations
+
+Gardez le contrôle sur vos traitements grâce aux informations de progression :
+
+- Pourcentage d'avancement.
+- Durée vidéo déjà traitée.
+- Temps écoulé.
+- Temps restant estimé.
+- Vitesse de traitement.
+- Taille du fichier généré.
+- Annulation de l'exportation.
+
+Une exportation annulée ne laisse pas de fichier de sortie partiel.
+
+### ✂️ Découpage des vidéos longues
+
+Préparez des vidéos en plusieurs parties numérotées.
+
+- Préréglages TikTok.
+- Préréglages Instagram Reels.
+- Préréglages YouTube Shorts.
+- Durée personnalisée de 1 seconde à 24 heures.
+- Marge de sécurité d'une seconde par segment.
+- Conservation des segments terminés en cas d'annulation.
+
+### 🎨 Personnalisation
+
+BeautyCut propose 20 thèmes visuels inspirés de la nature, des océans et du cosmos.
+
+- Sélection du thème depuis l'interface.
+- Mémorisation des préférences.
+- Interface adaptée aux différentes dimensions de fenêtre.
+- Aperçus réorganisés selon la largeur disponible.
+
+### 🔄 Mise à jour automatique
+
+BeautyCut intègre un système de mise à jour automatique :
+
+1. Vérification de la version disponible au démarrage.
+2. Téléchargement de la nouvelle version.
+3. Vérification de l'empreinte SHA-256.
+4. Installation automatique.
+5. Redémarrage de l'application.
+
+---
+
+## 🖥️ Configuration requise
+
+| Élément | Configuration |
+|---|---|
+| Système | Windows 10 / 11 |
+| Architecture | x64 |
+| Python | 3.10 ou supérieur |
+| Interface | PySide6 |
+| Traitement vidéo | FFmpeg |
+| Analyse média | FFprobe |
+
+**Dépendances principales :**
+- Python
+- PySide6
+- FFmpeg
+- FFprobe
+
+Les encodeurs et décodeurs disponibles dépendent de la compilation locale de FFmpeg.
+
+Pour bénéficier de l'accélération matérielle NVIDIA, une carte compatible, un pilote adapté et une compilation FFmpeg avec NVENC sont nécessaires.
+
+---
+
+## 🚀 Installation
+
+### Depuis les sources
+
+Cloner le dépôt :
 
 ```powershell
-cd C:\Users\Derek\Desktop\BEAUTYCUT
+git clone https://github.com/Immersive-Studio-Corporation/Beautycut.git
+
+cd Beautycut
+```
+
+Créer un environnement virtuel :
+
+```powershell
 py -3 -m venv .venv
+
 .\.venv\Scripts\Activate.ps1
+```
+
+Installer les dépendances :
+
+```powershell
 python -m pip install --upgrade pip
+
 python -m pip install -e .
+```
+
+Lancer BeautyCut :
+
+```powershell
 python -m beautycut
 ```
 
-Si FFmpeg n'est pas dans le `PATH`, définis les chemins pour la session PowerShell :
+### Configuration de FFmpeg
+
+FFmpeg et FFprobe doivent être accessibles depuis le PATH, présents dans le dossier `bin` du projet ou configurés explicitement.
+
+Exemple PowerShell :
 
 ```powershell
 $env:BEAUTYCUT_FFMPEG = 'C:\Outils\ffmpeg\bin\ffmpeg.exe'
+
 $env:BEAUTYCUT_FFPROBE = 'C:\Outils\ffmpeg\bin\ffprobe.exe'
+
 python -m beautycut
 ```
 
-## Générer l'application Windows
+---
+
+## 📦 Compilation Windows
+
+BeautyCut peut être compilé sous forme d'application Windows autonome.
+
+### Générer l'application
 
 ```powershell
 .\scripts\build_windows.ps1
 ```
 
-L'exécutable et ses bibliothèques Qt sont générés dans `dist\BeautyCut\`. Le paquet utilise FFmpeg/FFprobe déjà installés sur l'ordinateur. Pour créer aussi un installateur, installe Inno Setup puis exécute `.\scripts\build_windows.ps1 -BuildInstaller` ; le fichier sera créé dans `dist\installer\`.
+Les fichiers compilés sont générés dans :
 
-Le logo transparent complet est dans `assets\beautycut_logo.png`. Son emblème optimisé pour l'interface, la barre des tâches et l'installateur est dans `assets\beautycut_mark.png` et `assets\beautycut_mark.ico`.
+```text
+dist/
+└── BeautyCut/
+```
 
-## Publication des mises à jour
+### Générer l'installeur
 
-À chaque lancement, l'application lit `updates/latest.json` depuis l'adresse HTTPS configurée dans le panneau « Mise à jour automatique ». Si une version plus récente est publiée, elle télécharge l'installeur, vérifie son empreinte SHA-256, l'installe en silence et redémarre BeautyCut. Le dépôt et son manifeste doivent être accessibles publiquement ; aucun jeton GitHub n'est intégré à l'application. Le workflow GitHub Actions de ce dépôt génère l'installeur Windows, publie la release et met à jour le manifeste quand du code de l'application est poussé sur `main`. Pour la prochaine version, incrémente le numéro dans `pyproject.toml`, `beautycut/__init__.py` et `packaging/BeautyCut.iss`.
+Après installation d'Inno Setup :
 
-## Tests
+```powershell
+.\scripts\build_windows.ps1 -BuildInstaller
+```
 
-Les tests créent des vidéos courtes avec FFmpeg dans un dossier temporaire, inspectent deux pistes audio, vérifient le recadrage et valident un export réellement relu par FFprobe.
+L'installeur est généré dans :
+
+```text
+dist/
+└── installer/
+```
+
+FFmpeg et FFprobe doivent toujours être disponibles sur l'ordinateur cible.
+
+---
+
+## 🛠️ Technologies utilisées
+
+| Technologie | Utilisation |
+|---|---|
+| Python | Langage principal |
+| PySide6 / Qt | Interface graphique |
+| FFmpeg | Traitement et exportation vidéo |
+| FFprobe | Analyse des médias |
+| PyInstaller | Compilation Windows |
+| Inno Setup | Création de l'installeur |
+| GitHub Actions | Automatisation des publications |
+
+### Architecture du projet
+
+```text
+Beautycut/
+│
+├── assets/
+│   ├── beautycut_logo.png
+│   ├── beautycut_mark.png
+│   └── beautycut_mark.ico
+│
+├── beautycut/
+│   ├── app.py
+│   │
+│   ├── gui/
+│   │   └── Interface, widgets et tâches Qt
+│   │
+│   └── media/
+│       ├── probe.py
+│       ├── export.py
+│       └── tools.py
+│
+├── tests/
+│
+├── scripts/
+│   └── build_windows.ps1
+│
+├── packaging/
+│   └── BeautyCut.iss
+│
+├── updates/
+│   └── latest.json
+│
+├── pyproject.toml
+├── README.md
+└── LICENSE
+```
+
+---
+
+## 🧪 Tests
+
+Les tests automatisés vérifient notamment :
+
+- La création de médias de test avec FFmpeg.
+- L'analyse des pistes avec FFprobe.
+- La gestion de plusieurs pistes audio.
+- Le fonctionnement du recadrage.
+- La validité des exports générés.
+
+Exécuter les tests :
 
 ```powershell
 python -m unittest discover -s tests -v
 ```
 
-## Structure
+---
 
-```text
-beautycut/
-  app.py                 Démarrage de l'application
-  gui/                   Fenêtre, widgets et tâches asynchrones Qt
-  media/probe.py         Lecture FFprobe et inventaire des codecs
-  media/export.py        Profils, filtres et export FFmpeg
-  media/tools.py         Découverte de ffmpeg.exe et ffprobe.exe
-tests/                   Tests du pipeline média réel
-```
+## 🗺️ Feuille de route
 
-## Formats et licences
+BeautyCut est conçu pour évoluer progressivement vers une solution plus complète de préparation et de montage vidéo.
 
-Le code de BeautyCut est sous licence MIT (voir [LICENSE](LICENSE)). BeautyCut lance FFmpeg/FFprobe en processus séparés et ne les modifie pas ; aucun binaire FFmpeg n'est inclus. Il faut vérifier la licence et les options de compilation de la distribution FFmpeg choisie avant de la redistribuer : certaines compilations activent des composants GPL ou des codecs soumis à des conditions supplémentaires. PySide6 est distribué sous LGPLv3/GPLv3 ou licence commerciale. Les dépendances Python d'exécution du projet sont limitées à PySide6 ; les modules média utilisent la bibliothèque standard.
+| Fonctionnalité | État |
+|---|---|
+| Importation et analyse des médias | Disponible |
+| Recadrage vidéo statique | Disponible |
+| Formats personnalisés | Disponible |
+| Exportation FFmpeg | Disponible |
+| Gestion des pistes audio | Disponible |
+| Découpage en segments | Disponible |
+| Accélération NVIDIA NVENC | Selon installation |
+| Lecteur vidéo intégré | À venir |
+| Timeline de montage | À venir |
+| Déplacement et assemblage des clips | À venir |
+| Gestion avancée des pistes audio | À venir |
+| Texte et transitions | À venir |
+| Recadrage intelligent | À venir |
+| Détection locale des visages et sujets | À venir |
 
-## Feuille de route
+Les fonctionnalités indiquées comme à venir ne sont pas encore disponibles dans la version actuelle.
 
-1. Compatibilité des formats d'import et d'export — en cours dans cette version.
-2. Lecteur vidéo et timeline.
-3. Découpe, déplacement et assemblage des clips.
-4. Pistes audio, texte, transitions et fondus.
-5. Intégration du recadrage intelligent avec le montage.
-6. Validation de l'ensemble et optimisation des performances.
+---
 
-La sortie 9:16 de cette première étape utilise un recadrage statique dont la position est réglable. Le suivi fluide du sujet et la détection locale des visages/éléments importants restent à développer ; l'interface l'indique explicitement.
+## 🔐 Confidentialité et traitement local
+
+BeautyCut privilégie le traitement local des médias.
+
+- Aucun compte utilisateur nécessaire.
+- Aucun service de stockage vidéo distant.
+- Aucun téléversement de média vers un serveur de traitement.
+- Aucun filigrane ajouté aux exportations.
+- Traitement effectué avec les outils FFmpeg et FFprobe installés localement.
+
+Le système de mise à jour automatique utilise néanmoins une connexion HTTPS pour vérifier et télécharger les nouvelles versions.
+
+---
+
+## 📄 Licence
+
+BeautyCut est distribué sous licence **MIT**.
+
+Consultez le fichier [LICENSE](LICENSE) pour connaître les conditions d'utilisation et de redistribution.
+
+FFmpeg, FFprobe, PySide6 et les autres composants tiers conservent leurs propres licences. Les conditions de redistribution doivent être vérifiées séparément.
+
+---
+
+## 🏢 Développement
+
+**BeautyCut** est un projet développé par **Immersive Studio Corporation**.
+
+🌐 Site : https://immersive-studio.fr
+
+💻 GitHub : https://github.com/Immersive-Studio-Corporation
+
+📦 Dépôt BeautyCut : https://github.com/Immersive-Studio-Corporation/Beautycut
+
+---
+
+<p align="center">
+  <strong>BeautyCut</strong>
+  <br>
+  <em>Transformez vos vidéos, en local.</em>
+  <br><br>
+  © 2026 Immersive Studio Corporation
+</p>
