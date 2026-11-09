@@ -1,6 +1,6 @@
 {
-  "version": "0.4.3",
-  "installer_url": "https://github.com/Immersive-Studio-Corporation/Beautycut/releases/download/v0.4.3/BeautyCut-Setup-0.4.3.exe",
-  "sha256": "a9fbc78c2791319b363224e77f98355116940bc327692406b1a2ecdb07e0ea19",
-  "release_notes": "Refonte de l’interface : aperçus côte à côte, cadrage plus direct, formats et destinations adaptés, avec les 20 thèmes conservés."
+  "version": "0.4.4",
+  "installer_url": "https://github.com/Immersive-Studio-Corporation/Beautycut/releases/download/v0.4.4/BeautyCut-Setup-0.4.4.exe",
+  "sha256": "de77580d1cee59ae1a6fa0739d83689ae6c8dd077e7e8b50014c83967a09b982",
+  "release_notes": "Comparaison avant/après déplaçable, poignées de cadrage redimensionnables et raccourcis clavier. Tous les thèmes, réglages et aperçus FFmpeg restent synchronisés."
 }
