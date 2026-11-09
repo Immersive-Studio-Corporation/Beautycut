@@ -81,6 +81,14 @@ class MediaPipelineTests(unittest.TestCase):
         self.assertIn("force_original_aspect_ratio=decrease", contained)
         self.assertIn("pad=360:640", contained)
 
+    def test_horizontal_flip_is_included_in_both_crop_modes(self) -> None:
+        fill = crop_filter(ExportSettings(profile="custom", width=360, height=640, flip_horizontal=True))
+        contain = crop_filter(ExportSettings(
+            profile="custom", width=360, height=640, fit_mode="contain", flip_horizontal=True,
+        ))
+        self.assertTrue(fill.startswith("hflip,scale="))
+        self.assertTrue(contain.startswith("hflip,scale="))
+
     def test_export_keeps_both_audio_tracks_and_outputs_requested_size(self) -> None:
         info = self.probe.probe(self.source)
         inventory = self.probe.available_codecs()

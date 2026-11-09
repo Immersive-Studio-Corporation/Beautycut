@@ -76,7 +76,7 @@ class MainWindowTests(unittest.TestCase):
         self.assertGreater(self.window.workspace_scroll.verticalScrollBar().maximum(), 0)
         self.assertFalse(self.window.original_preview.geometry().intersects(self.window.output_preview.geometry()))
         for preview in (self.window.original_preview, self.window.output_preview):
-            self.assertFalse(preview.canvas.geometry().intersects(preview.caption.geometry()))
+            self.assertGreaterEqual(preview.canvas.height(), 150)
 
     def test_aspect_ratio_presets_and_custom_format_select_correct_sizes(self) -> None:
         self.window._select_profile("portrait")
@@ -91,10 +91,27 @@ class MainWindowTests(unittest.TestCase):
         self.assertFalse(self.window.custom_size_widget.isHidden())
         self.assertEqual((self.window.width_spin.value(), self.window.height_spin.value()), (1080, 1080))
 
+    def test_destination_tiles_and_flip_control_apply_real_export_settings(self) -> None:
+        self.window._select_destination("instagram_reels", "vertical")
+        self.assertEqual(self.window._settings().profile, "vertical")
+        self.assertEqual(self.window.destination_combo.itemData(self.window.destination_combo.currentIndex()), "vertical")
+        self.assertEqual(
+            self.window.destination_combo.itemData(self.window.destination_combo.currentIndex(), Qt.ItemDataRole.UserRole + 1),
+            "instagram_reels",
+        )
+        self.window.flip_button.setChecked(True)
+        self.assertTrue(self.window._settings().flip_horizontal)
+        self.window._select_destination("youtube_landscape", "landscape")
+        self.assertEqual(self.window._settings().width, 1920)
+        self.assertEqual(self.window._settings().height, 1080)
+        self.assertTrue(self.window._settings().flip_horizontal)
+
     def test_crop_anchors_zoom_and_locked_custom_ratio(self) -> None:
         self.window._set_crop_position(0, 100)
         self.assertEqual(self.window._settings().crop_x, -1)
         self.assertEqual(self.window._settings().crop_y, 1)
+        self.window.quick_position_actions["Haut droite"].trigger()
+        self.assertEqual((self.window.x_slider.value(), self.window.y_slider.value()), (100, 0))
         self.window._select_profile("custom")
         self.window.width_spin.setValue(900)
         self.assertEqual((self.window.width_spin.value(), self.window.height_spin.value()), (900, 1600))
@@ -103,6 +120,13 @@ class MainWindowTests(unittest.TestCase):
         self.assertEqual(self.window.width_spin.value(), 900)
         self.window.zoom_slider.setValue(150)
         self.assertEqual(self.window._settings().crop_zoom, 1.5)
+
+    def test_empty_previews_fill_the_canvas_with_a_readable_placeholder(self) -> None:
+        canvas = self.window.output_preview.canvas
+        frame = canvas._frame_rect()
+        self.assertEqual(frame, canvas.contentsRect())
+        self.assertFalse(canvas._crop_interactive())
+        self.assertIsNone(canvas._pixmap)
 
     def test_export_progress_shows_waiting_then_live_metrics(self) -> None:
         self.window._export_started_at = time.perf_counter()

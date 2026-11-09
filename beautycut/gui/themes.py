@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
 class Theme:
+    """Jetons de couleur d'un thème.
+
+    Toutes les couleurs de l'interface passent par ces jetons : aucun composant
+    ne doit coder une couleur en dur, afin que les 20 thèmes restent lisibles.
+    """
+
     key: str
     name: str
     background: str
@@ -20,6 +26,16 @@ class Theme:
     preview: str
     groove: str
     scrollbar: str
+    # Jetons dérivés (couleurs d'état, surbrillances, couleurs sémantiques).
+    hover: str = ""
+    field: str = ""
+    focus: str = ""
+    shade: str = ""
+    success: str = ""
+    warning: str = ""
+    error: str = ""
+    family: str = "sombre"
+    light: bool = False
 
 
 THEMES = (
@@ -31,7 +47,7 @@ THEMES = (
     Theme("sunset_glow", "Coucher de soleil", "#180f12", "#25181c", "#1e1317", "#523039", "#fff1f0", "#d6bfc1", "#ff8d79", "#ffc29b", "#35120c", "#48252a", "#130d10", "#564047", "#a15d63"),
     Theme("volcanic_ember", "Lueur volcanique", "#17100e", "#241916", "#1d1412", "#51372e", "#fff3ed", "#d6beb1", "#ef7955", "#ffad70", "#35150d", "#472820", "#130d0b", "#56423a", "#a55e46"),
     Theme("alpine_mist", "Brume alpine", "#0d1417", "#172126", "#111a1e", "#30454a", "#edf8fa", "#b7cbd0", "#7dc6d0", "#b4e8e5", "#09252a", "#1d3a41", "#0a1114", "#394b50", "#58858d"),
-    Theme("deep_ocean", "Océan profond", "#091316", "#132126", "#0f1a1f", "#29434b", "#edf8fa", "#b2c9ce", "#39b9d1", "#78e8e1", "#06232a", "#153b44", "#081114", "#314850", "#438393"),
+    Theme("deep_ocean", "Océan", "#07111e", "#101d2d", "#0c1825", "#21384a", "#edf7fc", "#a9beca", "#00bcd2", "#55e5ef", "#032027", "#123748", "#07101b", "#26394a", "#3c788b"),
     Theme("lagoon", "Lagon turquoise", "#0b1514", "#142320", "#101c1a", "#2b4943", "#eff8f4", "#b5cdc5", "#39d0bd", "#8be9c8", "#062520", "#16443a", "#091211", "#354c45", "#4d9083"),
     Theme("coral_reef", "Récif corallien", "#160f11", "#24191c", "#1d1417", "#50343a", "#fff2f0", "#d4c0c2", "#fa857f", "#ffb19a", "#35100f", "#47252a", "#120c0e", "#574047", "#a35f6c"),
     Theme("glacier", "Glacier", "#0c131a", "#161f29", "#111a23", "#304554", "#f0f7ff", "#bacbdc", "#79c3f2", "#b6e7ff", "#08243a", "#183d54", "#091117", "#394b5b", "#5683a3"),
@@ -45,4 +61,46 @@ THEMES = (
     Theme("moonlight", "Clair de lune", "#10121a", "#1a1c27", "#141621", "#393e55", "#f5f5ff", "#c7c9dc", "#c8c8f5", "#a7c3ff", "#22213f", "#343653", "#0c0e15", "#46495d", "#777ea8"),
 )
 
-THEME_BY_KEY = {theme.key: theme for theme in THEMES}
+
+# Thèmes clairs. Ils réutilisent exactement la même structure de jetons que les
+# thèmes sombres : l'interface n'a donc aucune couleur codée en dur.
+LIGHT_THEMES = (
+    Theme("daybreak", "Aube claire", "#f3f6f7", "#ffffff", "#eef2f4", "#cbd8dd", "#10222a", "#526b73",
+          "#0f9d8f", "#0b7d72", "#f2fffc", "#dff1ee", "#e4ecef", "#b9cbd1", "#9fb7bd",
+          family="clair", light=True),
+    Theme("seaglass", "Verre de mer", "#eff5f3", "#ffffff", "#e9f1ee", "#c6d8d2", "#0f2723", "#4d6b64",
+          "#2a9c8b", "#1f7d6f", "#f1fffb", "#dbf0e9", "#e0ebe7", "#b4cbc4", "#9ab8b0",
+          family="clair", light=True),
+    Theme("dawn_sand", "Sable à l'aube", "#f7f3ec", "#fffdf9", "#f1ebe1", "#dfd2bf", "#2b2015", "#6f6152",
+          "#c1803c", "#9c5f26", "#fffaf2", "#f6e7d2", "#f0e8dc", "#d8c9b4", "#bda98d",
+          family="clair", light=True),
+)
+
+ALL_THEMES = THEMES + LIGHT_THEMES
+
+
+def _mix(color: str, other: str, weight: float) -> str:
+    """Mélange deux couleurs hexadécimales (#rrggbb)."""
+    first = [int(color[index:index + 2], 16) for index in (1, 3, 5)]
+    second = [int(other[index:index + 2], 16) for index in (1, 3, 5)]
+    mixed = [round(a + (b - a) * weight) for a, b in zip(first, second)]
+    return "#" + "".join(f"{value:02x}" for value in mixed)
+
+
+def _complete(theme: Theme) -> Theme:
+    """Complète les jetons d'état à partir des couleurs de base du thème."""
+    towards_highlight = "#ffffff" if theme.light else theme.accent_light
+    towards_depth = "#0b1014" if not theme.light else "#ffffff"
+    hover = theme.hover or _mix(theme.surface, towards_highlight, 0.10 if not theme.light else 0.55)
+    field = theme.field or _mix(theme.surface, towards_depth, 0.28 if not theme.light else 0.35)
+    focus = theme.focus or theme.accent_light
+    shade = theme.shade or (theme.selected if not theme.light else _mix(theme.selected, "#ffffff", 0.35))
+    success = theme.success or ("#14803b" if theme.light else "#4bd46a")
+    warning = theme.warning or ("#e8b465" if not theme.light else "#a9701f")
+    error = theme.error or ("#ff9a9a" if not theme.light else "#b3261e")
+    return replace(theme, hover=hover, field=field, focus=focus, shade=shade,
+                   success=success, warning=warning, error=error)
+
+
+COMPLETED_THEMES = tuple(_complete(theme) for theme in ALL_THEMES)
+THEME_BY_KEY = {theme.key: theme for theme in COMPLETED_THEMES}

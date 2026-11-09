@@ -75,6 +75,7 @@ class ExportSettings:
     crop_y: float = 0.0
     crop_zoom: float = 1.0
     fit_mode: str = "fill"
+    flip_horizontal: bool = False
     speed: str = "fast"
     split_enabled: bool = False
     split_limit_seconds: int = 180
@@ -162,9 +163,10 @@ def choose_audio_encoder(codec_label: str, available: frozenset[str]) -> str:
 
 
 def crop_filter(settings: ExportSettings) -> str:
+    flip = "hflip," if settings.flip_horizontal else ""
     if settings.fit_mode == "contain":
         return (
-            f"scale={settings.width}:{settings.height}:force_original_aspect_ratio=decrease:force_divisible_by=2,"
+            f"{flip}scale={settings.width}:{settings.height}:force_original_aspect_ratio=decrease:force_divisible_by=2,"
             f"pad={settings.width}:{settings.height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,format=yuv420p"
         )
     x = _ffmpeg_float(settings.crop_x)
@@ -174,7 +176,7 @@ def crop_filter(settings: ExportSettings) -> str:
     scaled_width = int(round(settings.width * settings.crop_zoom / 2) * 2)
     scaled_height = int(round(settings.height * settings.crop_zoom / 2) * 2)
     return (
-        f"scale={scaled_width}:{scaled_height}:force_original_aspect_ratio=increase:force_divisible_by=2,"
+        f"{flip}scale={scaled_width}:{scaled_height}:force_original_aspect_ratio=increase:force_divisible_by=2,"
         f"crop={settings.width}:{settings.height}:{crop_x}:{crop_y},setsar=1,format=yuv420p"
     )
 

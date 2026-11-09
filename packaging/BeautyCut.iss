@@ -1,5 +1,5 @@
 #define MyAppName "BeautyCut"
-#define MyAppVersion "0.4.2"
+#define MyAppVersion "0.4.3"
 #define MyAppPublisher "BeautyCut"
 #define MyAppExeName "BeautyCut.exe"
 
