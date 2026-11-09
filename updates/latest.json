@@ -1,0 +1,6 @@
+{
+  "version": "0.4.1",
+  "installer_url": "https://github.com/Immersive-Studio-Corporation/Beautycut/releases/download/v0.4.1/BeautyCut-Setup-0.4.1.exe",
+  "sha256": "84a1d47f15535eca0dc9e322de93abc68d24ff58bedf38f6d8a0baaa45fda364",
+  "release_notes": "Préréglages de découpage en secondes et minutes, durée personnalisée à la seconde et mise à jour automatique au lancement."
+}
