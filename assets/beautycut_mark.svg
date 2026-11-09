@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="lagoon" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#43dfc5"/>
+      <stop offset="1" stop-color="#087f83"/>
+    </linearGradient>
+    <linearGradient id="play" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#e6d9ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="64" fill="url(#lagoon)"/>
+  <path d="M78 49H57v28M178 49h21v28M57 178v29h28M199 178v29h-28" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="128" cy="128" r="39" fill="none" stroke="#fff" stroke-width="10" opacity=".88"/>
+  <path d="m119 108 35 20-35 20z" fill="url(#play)"/>
+  <path d="M174 87h18" stroke="#d2f77a" stroke-width="7" stroke-linecap="round"/>
+  <path d="M64 166h18" stroke="#ff9a76" stroke-width="7" stroke-linecap="round"/>
+</svg>

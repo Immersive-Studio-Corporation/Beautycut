@@ -1,0 +1,62 @@
+name: Build and publish BeautyCut
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "beautycut/**"
+      - "assets/**"
+      - "packaging/**"
+      - "scripts/**"
+      - "pyproject.toml"
+      - "requirements.txt"
+      - "run_beautycut.py"
+      - "README.md"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Get source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build the Windows installer
+        shell: powershell
+        run: .\scripts\build_windows.ps1 -BuildInstaller
+
+      - name: Publish the release and update manifest
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (python -c "from beautycut import __version__; print(__version__)").Trim()
+          $tag = "v$version"
+          $asset = "dist/installer/BeautyCut-Setup-$version.exe"
+          gh release create $tag $asset --target $env:GITHUB_SHA --title "BeautyCut $version" --notes "Mise à jour automatique de BeautyCut $version."
+          if ($LASTEXITCODE -ne 0) { throw "Impossible de publier la release $tag." }
+
+          $manifest = Join-Path $env:RUNNER_TEMP "beautycut-latest.json"
+          Copy-Item updates/latest.json $manifest -Force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          Copy-Item $manifest updates/latest.json -Force
+          git add updates/latest.json
+          git commit -m "Publish BeautyCut $version update manifest"
+          if ($LASTEXITCODE -ne 0) { throw "Impossible de préparer le manifeste de mise à jour." }
+          git push origin main
