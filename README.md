@@ -62,7 +62,7 @@ python -m beautycut
 
 L'exécutable et ses bibliothèques Qt sont générés dans `dist\BeautyCut\`. Le paquet utilise FFmpeg/FFprobe déjà installés sur l'ordinateur. Pour créer aussi un installateur, installe Inno Setup puis exécute `.\scripts\build_windows.ps1 -BuildInstaller` ; le fichier sera créé dans `dist\installer\`.
 
-Le logo vectoriel et ses variantes sont dans `assets\beautycut_logo.svg` et `assets\beautycut_mark.svg`.
+Le logo transparent complet est dans `assets\beautycut_logo.png`. Son emblème optimisé pour l'interface, la barre des tâches et l'installateur est dans `assets\beautycut_mark.png` et `assets\beautycut_mark.ico`.
 
 ## Publication des mises à jour
 

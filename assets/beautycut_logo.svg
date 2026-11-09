@@ -1,15 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 220">
-  <defs>
-    <linearGradient id="lagoon" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#43dfc5"/><stop offset="1" stop-color="#087f83"/>
-    </linearGradient>
-  </defs>
-  <rect x="8" y="8" width="204" height="204" rx="58" fill="url(#lagoon)"/>
-  <path d="M72 50H54v25M148 50h18v25M54 145v25h24M166 145v25h-24" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="110" cy="110" r="34" fill="none" stroke="#fff" stroke-width="9" opacity=".9"/>
-  <path d="m103 92 30 18-30 18z" fill="#fff"/>
-  <path d="M150 81h15" stroke="#d2f77a" stroke-width="6" stroke-linecap="round"/>
-  <path d="M56 140h15" stroke="#ff9a76" stroke-width="6" stroke-linecap="round"/>
-  <text x="252" y="128" font-family="Segoe UI, Inter, sans-serif" font-size="72" font-weight="700" fill="#eff8f5">BeautyCut</text>
-  <text x="257" y="169" font-family="Segoe UI, Inter, sans-serif" font-size="17" letter-spacing="2" fill="#9ab5b0">VIDÉO · MONTAGE · RECADRAGE</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1286" height="1223" viewBox="0 0 1286 1223"><image href="beautycut_logo.png" width="1286" height="1223"/></svg>

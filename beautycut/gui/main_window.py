@@ -422,11 +422,19 @@ class MainWindow(QMainWindow):
         row.setContentsMargins(0, 0, 0, 0)
         mark = QLabel()
         mark.setObjectName("brandMark")
-        mark.setPixmap(QIcon(str(_asset_path("beautycut_mark.svg"))).pixmap(52, 52))
+        mark.setPixmap(
+            QPixmap(str(_asset_path("beautycut_mark.png"))).scaled(
+                52,
+                52,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
         mark.setFixedSize(52, 52)
         names = QVBoxLayout()
-        brand = QLabel("BeautyCut")
+        brand = QLabel('<span style="color:#f3f8ff">Beauty</span><span style="color:#22d3ee">Cut</span>')
         brand.setObjectName("brand")
+        brand.setAccessibleName("BeautyCut")
         subtitle = QLabel("Transformez vos vidéos, en local")
         subtitle.setObjectName("muted")
         names.addWidget(brand)

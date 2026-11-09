@@ -1,5 +1,5 @@
 #define MyAppName "BeautyCut"
-#define MyAppVersion "0.4.1"
+#define MyAppVersion "0.4.2"
 #define MyAppPublisher "BeautyCut"
 #define MyAppExeName "BeautyCut.exe"
 
@@ -8,6 +8,7 @@ AppId={{AB50C7A1-967B-44CA-BD11-96307FC19C65}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+SetupIconFile=..\assets\beautycut_mark.ico
 DefaultDirName={autopf}\BeautyCut
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
