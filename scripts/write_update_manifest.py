@@ -40,7 +40,7 @@ def main() -> int:
         "version": __version__,
         "installer_url": installer_url,
         "sha256": sha256_file(installer),
-        "release_notes": "Refonte de l’interface : aperçus côte à côte, cadrage plus direct, formats et destinations adaptés, avec les 20 thèmes conservés.",
+        "release_notes": "Comparaison avant/après déplaçable, poignées de cadrage redimensionnables et raccourcis clavier. Tous les thèmes, réglages et aperçus FFmpeg restent synchronisés.",
     }
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)

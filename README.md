@@ -45,10 +45,12 @@ Outils de cadrage disponibles :
 - Déplacement direct du cadre à la souris.
 - Neuf points d'ancrage rapides.
 - Ajustement horizontal et vertical.
-- Zoom réglable jusqu'à 200 %.
+- Zoom réglable jusqu'à 200 %, également ajustable en glissant les poignées de recadrage.
 - Recentrage et réinitialisation.
 - Plusieurs modes de remplissage.
 - Conservation de l'image entière avec bandes.
+- Comparaison avant/après déplaçable entre l'image originale et le rendu réel de FFmpeg.
+- Raccourcis : Ctrl+O pour importer, Ctrl+E pour exporter, Ctrl+R pour réinitialiser le cadrage et Ctrl+0 pour le centrer.
 
 ### ⚙️ Exportation configurable
 

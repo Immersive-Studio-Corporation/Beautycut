@@ -13,13 +13,26 @@ from PySide6.QtCore import (
     QTimer,
     QUrl,
 )
-from PySide6.QtGui import QColor, QDragEnterEvent, QDropEvent, QIcon, QIntValidator, QPainter, QPainterPath, QPen, QPixmap
+from PySide6.QtGui import (
+    QColor,
+    QDragEnterEvent,
+    QDropEvent,
+    QIcon,
+    QIntValidator,
+    QKeySequence,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPixmap,
+    QShortcut,
+)
 from PySide6.QtWidgets import (
     QButtonGroup,
     QBoxLayout,
     QApplication,
     QCheckBox,
     QComboBox,
+    QDialog,
     QFileDialog,
     QFrame,
     QGridLayout,
@@ -57,7 +70,15 @@ from ..media.tools import find_tool
 from ..updater import DEFAULT_UPDATE_MANIFEST_URL, UpdateManifest
 from .themes import THEMES, THEME_BY_KEY, Theme
 from .style import build_stylesheet
-from .widgets import CollapsibleSection, ExportDock, PreviewPanel, SmoothScrollArea, StatusPill, tinted_icon
+from .widgets import (
+    BeforeAfterCanvas,
+    CollapsibleSection,
+    ExportDock,
+    PreviewPanel,
+    SmoothScrollArea,
+    StatusPill,
+    tinted_icon,
+)
 from .workers import (
     AnalyzeMediaThread,
     CheckForUpdateThread,
@@ -220,6 +241,7 @@ class MainWindow(QMainWindow):
         self._export_timer.setInterval(1000)
         self._export_timer.timeout.connect(self._refresh_export_metrics)
         self._build_ui()
+        self._install_shortcuts()
         self._apply_style()
         self._apply_responsive_layout()
         self.setWindowIcon(QIcon(str(_asset_path("beautycut_mark.ico"))))
@@ -923,6 +945,7 @@ class MainWindow(QMainWindow):
             "Résultat estimé", "landscape", icon_path="icons/check.svg", icon_tone="success"
         )
         self.original_preview.canvas.crop_position_changed.connect(self._crop_preview_position_changed)
+        self.original_preview.canvas.crop_zoom_changed.connect(self._crop_preview_zoom_changed)
         # A slightly wider output pane follows the reference composition.
         previews.addWidget(self.original_preview, 49)
         previews.addWidget(self.output_preview, 51)
@@ -971,6 +994,16 @@ class MainWindow(QMainWindow):
         self.fullscreen_action_button.clicked.connect(self.output_preview._open_fullscreen)
         self.fullscreen_action_button.setMinimumSize(145, 38)
         preview_actions.addWidget(self.fullscreen_action_button)
+        self.compare_button = QPushButton("Comparer")
+        self.compare_button.setObjectName("previewActionButton")
+        self.compare_button.setProperty("iconPath", "icons/compare.svg")
+        self.compare_button.setIconSize(QSize(16, 16))
+        self.compare_button.setToolTip("Comparer le cadrage source et le rendu FFmpeg avec un curseur avant/après")
+        self.compare_button.setAccessibleName("Ouvrir la comparaison avant après")
+        self.compare_button.setMinimumSize(112, 38)
+        self.compare_button.setEnabled(False)
+        self.compare_button.clicked.connect(self._open_comparison)
+        preview_actions.addWidget(self.compare_button)
         self.reset_preview_button = QPushButton("Réinitialiser l’aperçu")
         self.reset_preview_button.setObjectName("subtleButton")
         self.reset_preview_button.setIconSize(QSize(16, 16))
@@ -981,7 +1014,7 @@ class MainWindow(QMainWindow):
         preview_actions.addWidget(self.reset_preview_button)
         self.preview_action_widgets = (
             self.grid_action_button, self.center_preview_button, self.flip_button,
-            self.fullscreen_action_button, self.reset_preview_button,
+            self.fullscreen_action_button, self.compare_button, self.reset_preview_button,
         )
         preview.addLayout(preview_actions)
         layout.addWidget(preview_card, 1)
@@ -1358,8 +1391,9 @@ class MainWindow(QMainWindow):
                 self.center_preview_button.setText("Centrer")
                 self.flip_button.setText("Inverser")
                 self.fullscreen_action_button.setText("Plein écran")
+                self.compare_button.setText("Comparer")
                 self.reset_preview_button.setText("Réinitialiser l’aperçu")
-                for widget, width in zip(self.preview_action_widgets, (112, 124, 128, 145, 178)):
+                for widget, width in zip(self.preview_action_widgets, (112, 124, 128, 145, 112, 178)):
                     widget.setMinimumWidth(width)
                 self.reset_preview_button.setMinimumWidth(178)
             self.preview_actions_layout.setSpacing(5 if actions_narrow else 8)
@@ -1403,7 +1437,7 @@ class MainWindow(QMainWindow):
         self._set_status_indicator("success" if self.info and (self.report is None or self.report.supported) else "info")
         for name in (
             "grid_action_button", "center_preview_button", "flip_button",
-            "fullscreen_action_button", "reset_preview_button",
+            "fullscreen_action_button", "compare_button", "reset_preview_button",
         ):
             button = getattr(self, name, None)
             icon_path = button.property("iconPath") if button is not None else None
@@ -1743,6 +1777,7 @@ class MainWindow(QMainWindow):
         self.import_button.setEnabled(False)
         self.import_button.setText("Changer de fichier")
         self.export_button.setEnabled(False)
+        self.compare_button.setEnabled(False)
         self.media_section.set_summary("Analyse…")
         self._set_status_indicator("info")
         self._set_media_thumbnail()
@@ -1821,6 +1856,7 @@ class MainWindow(QMainWindow):
             return
         self.import_button.setEnabled(True)
         self.export_button.setEnabled(False)
+        self.compare_button.setEnabled(False)
         self.progress.setVisible(False)
         self._set_status_indicator("error")
         _set_tone(self.compatibility, "error")
@@ -1982,6 +2018,9 @@ class MainWindow(QMainWindow):
         self.x_slider.setValue(max(0, min(100, x)))
         self.y_slider.setValue(max(0, min(100, y)))
 
+    def _crop_preview_zoom_changed(self, zoom: float) -> None:
+        self.zoom_slider.setValue(round(zoom * 100))
+
     def _crop_preview_position_changed(self, x: int, y: int) -> None:
         self._set_crop_position(x, y)
 
@@ -2015,6 +2054,62 @@ class MainWindow(QMainWindow):
     def _reset_preview_views(self) -> None:
         self.original_preview.canvas.reset_view()
         self.output_preview.canvas.reset_view()
+
+    def _open_comparison(self) -> None:
+        source = self.original_preview.canvas._pixmap
+        result = self.output_preview.canvas._pixmap
+        if source is None or source.isNull() or result is None or result.isNull():
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Comparaison avant / après · BeautyCut")
+        dialog.setMinimumSize(500, 360)
+        dialog.resize(920, 620)
+        dialog.setStyleSheet(self.styleSheet())
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(18, 16, 18, 18)
+        layout.setSpacing(10)
+        title = QLabel("Comparaison avant / après")
+        title.setObjectName("cardTitle")
+        subtitle = QLabel("Glissez le séparateur pour comparer l’image originale au résultat calculé par FFmpeg.")
+        subtitle.setObjectName("muted")
+        subtitle.setWordWrap(True)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        canvas = BeforeAfterCanvas(dialog)
+        canvas.set_images(source, result)
+        canvas.set_theme(THEME_BY_KEY[self.theme_key])
+        layout.addWidget(canvas, 1)
+        footer = QHBoxLayout()
+        footer.addStretch(1)
+        close = QPushButton("Fermer")
+        close.clicked.connect(dialog.accept)
+        footer.addWidget(close)
+        layout.addLayout(footer)
+        dialog.exec()
+
+    def _install_shortcuts(self) -> None:
+        """Raccourcis de fenêtre pour les actions de montage fréquentes."""
+        shortcuts = (
+            ("Ctrl+O", self._choose_file, "Importer un média"),
+            ("Ctrl+E", self._shortcut_export, "Exporter le média"),
+            ("Ctrl+R", self._reset_framing, "Réinitialiser le cadrage"),
+            ("Ctrl+0", self._center_crop, "Centrer le cadrage"),
+        )
+        self.shortcuts = {}
+        for sequence, callback, description in shortcuts:
+            shortcut = QShortcut(QKeySequence(sequence), self)
+            shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+            shortcut.setWhatsThis(description)
+            shortcut.activated.connect(callback)
+            self.shortcuts[sequence] = shortcut
+        self.import_button.setToolTip(f"{self.import_button.toolTip()}\nRaccourci : Ctrl+O")
+        self.export_button.setToolTip("Exporter le média avec les réglages actifs · Ctrl+E")
+        self.center_preview_button.setToolTip("Recentrer le cadrage et remettre les positions au milieu · Ctrl+0")
+        self.center_crop_button.setToolTip("Réinitialiser le cadrage, le zoom et la position · Ctrl+R")
+
+    def _shortcut_export(self) -> None:
+        if self.export_button.isEnabled():
+            self._start_export()
 
     def _flip_changed(self, _checked: bool) -> None:
         self._settings_changed()
@@ -2158,10 +2253,12 @@ class MainWindow(QMainWindow):
 
     def _request_preview(self) -> None:
         if not self.info or not self.info.primary_video:
+            self.compare_button.setEnabled(False)
             if self.info:
                 self.original_preview.set_placeholder("Le média importé ne contient pas d’image vidéo.")
                 self.output_preview.set_placeholder("Un fichier audio sera exporté sans piste vidéo.")
             return
+        self.compare_button.setEnabled(False)
         generation = self.generation
         if self.preview_thread and self.preview_thread.isRunning():
             # La nouvelle demande attend la fin du calcul précédent.
@@ -2180,9 +2277,14 @@ class MainWindow(QMainWindow):
         self._set_media_thumbnail(original)
         self.original_preview.set_image(original)
         self.output_preview.set_image(vertical)
+        self.compare_button.setEnabled(
+            self.original_preview.canvas._pixmap is not None
+            and self.output_preview.canvas._pixmap is not None
+        )
 
     def _preview_failed(self, generation: int, message: str) -> None:
         if generation == self.generation:
+            self.compare_button.setEnabled(False)
             self.output_preview.set_placeholder(message)
 
     def _preview_finished(self) -> None:

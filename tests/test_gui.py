@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QApplication
 from beautycut.media.export import ExportProgress
 from beautycut.gui.main_window import MainWindow
 from beautycut.gui.themes import THEMES, THEME_BY_KEY
+from beautycut.gui.widgets import BeforeAfterCanvas
 
 
 class MainWindowTests(unittest.TestCase):
@@ -25,6 +26,12 @@ class MainWindowTests(unittest.TestCase):
         self.window = MainWindow()
 
     def tearDown(self) -> None:
+        for name in ("analysis_thread", "preview_thread", "export_thread"):
+            thread = getattr(self.window, name, None)
+            if thread is not None and thread.isRunning():
+                if name == "export_thread":
+                    thread.cancel()
+                thread.wait(10000)
         self.window.close()
         self.window.deleteLater()
         self.app.sendPostedEvents(None, QEvent.Type.DeferredDelete)
@@ -156,6 +163,54 @@ class MainWindowTests(unittest.TestCase):
         QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=start + QPoint(50, 20))
         self.assertGreater(self.window.x_slider.value(), 50)
         self.assertGreater(self.window.y_slider.value(), 50)
+
+    def test_crop_corner_handle_changes_the_real_export_zoom(self) -> None:
+        canvas = self.window.original_preview.canvas
+        canvas.resize(640, 420)
+        canvas.set_image(QPixmap(1280, 720))
+        canvas.set_crop(9 / 16, 50, 50, "fill", 1.0)
+        canvas.show()
+        self.app.processEvents()
+        crop = canvas._crop_rect()
+        start = QPoint(round(crop.left()), round(crop.top()))
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=start)
+        QTest.mouseMove(canvas, start + QPoint(34, 34), 20)
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=start + QPoint(34, 34))
+        self.assertGreater(self.window.zoom_slider.value(), 100)
+        self.assertEqual(self.window._settings().crop_zoom, self.window.zoom_slider.value() / 100)
+
+    def test_before_after_slider_moves_over_the_real_preview_images(self) -> None:
+        canvas = BeforeAfterCanvas()
+        source, result = QPixmap(640, 360), QPixmap(360, 640)
+        source.fill(Qt.GlobalColor.blue)
+        result.fill(Qt.GlobalColor.red)
+        canvas.set_images(source, result)
+        canvas.resize(640, 420)
+        canvas.show()
+        self.app.processEvents()
+        frame = canvas._frame_rect()
+        y = round(frame.center().y())
+        start = QPoint(round(frame.center().x()), y)
+        finish = QPoint(round(frame.left() + frame.width() * 0.72), y)
+        QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=start)
+        QTest.mouseMove(canvas, finish, 20)
+        QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=finish)
+        self.assertGreater(canvas._position, 0.68)
+        previous = canvas._position
+        canvas.setFocus()
+        QTest.keyClick(canvas, Qt.Key.Key_Left)
+        self.assertLess(canvas._position, previous)
+        canvas.close()
+
+    def test_global_crop_reset_shortcut(self) -> None:
+        self.window.zoom_slider.setValue(175)
+        self.window._set_crop_position(17, 83)
+        self.window.show()
+        QTest.qWait(30)
+        QTest.keyClick(self.window, Qt.Key.Key_R, Qt.KeyboardModifier.ControlModifier)
+        self.assertEqual(self.window.zoom_slider.value(), 100)
+        self.assertEqual((self.window.x_slider.value(), self.window.y_slider.value()), (50, 50))
+
 
     def test_switching_container_filters_codecs(self) -> None:
         self.window.container_combo.setCurrentText("WebM")

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "beautycut"
-version = "0.4.3"
+version = "0.4.4"
 description = "Application locale de conversion et de recadrage vidéo pour formats courts."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -239,6 +239,7 @@ class PreviewCanvas(QWidget):
     """
 
     crop_position_changed = Signal(int, int)
+    crop_zoom_changed = Signal(float)
     zoom_changed = Signal(float)
     pan_changed = Signal(float, float)
     view_interaction = Signal()
@@ -271,6 +272,9 @@ class PreviewCanvas(QWidget):
         self._crop_y = 50
         self._drag_start: QPointF | None = None
         self._drag_position = (50, 50)
+        self._resize_start: QPointF | None = None
+        self._resize_zoom = 1.0
+        self._resize_radius = 1.0
         self._view_zoom = 1.0
         self._pan = QPointF(0, 0)
         self._pan_start: QPointF | None = None
@@ -402,18 +406,20 @@ class PreviewCanvas(QWidget):
     def _crop_interactive(self) -> bool:
         return self._interactive and self._fit_mode == "fill" and self._pixmap is not None
 
-    def _handle_at(self, point: QPointF) -> bool:
+    def _corner_at(self, point: QPointF) -> int | None:
         crop = self._crop_rect()
         if crop is None or not self._crop_interactive():
-            return False
-        radius = self.HANDLE
-        for x, y in (
+            return None
+        for index, (x, y) in enumerate((
             (crop.left(), crop.top()), (crop.right(), crop.top()),
             (crop.left(), crop.bottom()), (crop.right(), crop.bottom()),
-        ):
-            if abs(point.x() - x) <= radius and abs(point.y() - y) <= radius:
-                return True
-        return False
+        )):
+            if abs(point.x() - x) <= self.HANDLE and abs(point.y() - y) <= self.HANDLE:
+                return index
+        return None
+
+    def _handle_at(self, point: QPointF) -> bool:
+        return self._corner_at(point) is not None
 
     def _update_cursor(self) -> None:
         if not self._interactive:
@@ -548,6 +554,16 @@ class PreviewCanvas(QWidget):
         frame, crop = self._frame_rect(), self._crop_rect()
         if frame.isNull() or crop is None or not frame.contains(point):
             return
+        corner = self._corner_at(point)
+        if corner is not None:
+            self._resize_start = point
+            self._resize_zoom = self._zoom
+            self._resize_radius = max(1.0, (point - crop.center()).manhattanLength() / 1.41421356237)
+            self.setCursor(
+                Qt.CursorShape.SizeFDiagCursor if corner in (0, 3) else Qt.CursorShape.SizeBDiagCursor
+            )
+            event.accept()
+            return
         span_x = max(1.0, frame.width() - crop.width())
         span_y = max(1.0, frame.height() - crop.height())
         if not crop.contains(point):
@@ -566,11 +582,27 @@ class PreviewCanvas(QWidget):
             self.pan_changed.emit(self._pan.x(), self._pan.y())
             event.accept()
             return
+        if self._resize_start is not None:
+            crop = self._crop_rect()
+            if crop is None:
+                return
+            radius = max(1.0, (event.position() - crop.center()).manhattanLength() / 1.41421356237)
+            zoom = max(1.0, min(2.0, self._resize_zoom * self._resize_radius / radius))
+            if abs(zoom - self._zoom) >= 0.004:
+                self._zoom = zoom
+                self.crop_zoom_changed.emit(zoom)
+                self.update()
+            event.accept()
+            return
         if self._drag_start is None:
             if self._interactive:
-                self.setCursor(
-                    Qt.CursorShape.SizeFDiagCursor if self._handle_at(event.position()) else Qt.CursorShape.OpenHandCursor
+                corner = self._corner_at(event.position())
+                cursor = (
+                    Qt.CursorShape.SizeFDiagCursor if corner in (0, 3) else
+                    Qt.CursorShape.SizeBDiagCursor if corner in (1, 2) else
+                    Qt.CursorShape.OpenHandCursor
                 )
+                self.setCursor(cursor)
             super().mouseMoveEvent(event)
             return
         frame, crop = self._frame_rect(), self._crop_rect()
@@ -589,9 +621,12 @@ class PreviewCanvas(QWidget):
         event.accept()
 
     def mouseReleaseEvent(self, event) -> None:  # noqa: N802 - Qt API
-        if event.button() == Qt.MouseButton.LeftButton and (self._drag_start is not None or self._pan_start is not None):
+        if event.button() == Qt.MouseButton.LeftButton and (
+            self._drag_start is not None or self._pan_start is not None or self._resize_start is not None
+        ):
             self._drag_start = None
             self._pan_start = None
+            self._resize_start = None
             self._update_cursor()
             event.accept()
             return
@@ -629,6 +664,150 @@ class PreviewCanvas(QWidget):
         if event.key() == Qt.Key.Key_0:
             self.reset_view()
             self.view_interaction.emit()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+
+class BeforeAfterCanvas(QWidget):
+    """Curseur de comparaison entre l'image source et l'aperçu FFmpeg réel."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("comparisonCanvas")
+        self.setMinimumSize(320, 220)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setAccessibleName("Comparaison avant après, curseur déplaçable")
+        self.setMouseTracking(True)
+        self.setCursor(Qt.CursorShape.SizeHorCursor)
+        self._source: QPixmap | None = None
+        self._result: QPixmap | None = None
+        self._aspect = 9 / 16
+        self._position = 0.5
+        self._background = THEME_BY_KEY["deep_ocean"].preview
+        self._accent = THEME_BY_KEY["deep_ocean"].accent_light
+        self._text = THEME_BY_KEY["deep_ocean"].text
+        self._dragging = False
+
+    def set_images(self, source: QPixmap, result: QPixmap) -> None:
+        self._source = source
+        self._result = result
+        if not source.isNull():
+            self._aspect = source.width() / max(1, source.height())
+        self.update()
+
+    def set_theme(self, theme) -> None:
+        self._background = theme.preview
+        self._accent = theme.accent_light
+        self._text = theme.text
+        self.update()
+
+    def _frame_rect(self) -> QRectF:
+        available = QRectF(self.rect()).adjusted(12, 12, -12, -12)
+        if available.width() <= 0 or available.height() <= 0:
+            return QRectF()
+        if available.width() / available.height() > self._aspect:
+            width = available.height() * self._aspect
+            return QRectF(available.center().x() - width / 2, available.top(), width, available.height())
+        height = available.width() / self._aspect
+        return QRectF(available.left(), available.center().y() - height / 2, available.width(), height)
+
+    def paintEvent(self, event) -> None:  # noqa: N802 - Qt API
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+        painter.fillRect(self.rect(), QColor(self._background))
+        frame = self._frame_rect()
+        if frame.isNull():
+            return
+        clip = QPainterPath()
+        clip.addRoundedRect(frame, 10, 10)
+        painter.save()
+        painter.setClipPath(clip)
+        painter.fillRect(frame, QColor(self._background))
+        if self._source is not None and not self._source.isNull():
+            painter.drawPixmap(frame, self._source, QRectF(self._source.rect()))
+        split = frame.left() + frame.width() * self._position
+        if self._result is not None and not self._result.isNull():
+            painter.save()
+            painter.setClipRect(QRectF(split, frame.top(), frame.right() - split, frame.height()))
+            result_aspect = self._result.width() / max(1, self._result.height())
+            if result_aspect > frame.width() / max(1.0, frame.height()):
+                result_width = frame.width()
+                result_height = result_width / result_aspect
+            else:
+                result_height = frame.height()
+                result_width = result_height * result_aspect
+            result_frame = QRectF(0, 0, result_width, result_height)
+            result_frame.moveCenter(frame.center())
+            painter.drawPixmap(result_frame, self._result, QRectF(self._result.rect()))
+            painter.restore()
+        painter.restore()
+
+        painter.setPen(QPen(QColor(self._accent), 2))
+        painter.drawLine(QPointF(split, frame.top()), QPointF(split, frame.bottom()))
+        handle = QRectF(split - 15, frame.center().y() - 19, 30, 38)
+        painter.setPen(QPen(QColor(self._accent), 1))
+        painter.setBrush(QColor(self._background))
+        painter.drawRoundedRect(handle, 11, 11)
+        painter.setPen(QPen(QColor(self._accent), 1.7))
+        center = frame.center().y()
+        painter.drawLine(QPointF(split - 4, center - 5), QPointF(split - 8, center))
+        painter.drawLine(QPointF(split - 8, center), QPointF(split - 4, center + 5))
+        painter.drawLine(QPointF(split + 4, center - 5), QPointF(split + 8, center))
+        painter.drawLine(QPointF(split + 8, center), QPointF(split + 4, center + 5))
+
+        font = QFont(self.font())
+        font.setPointSizeF(max(8, font.pointSizeF() - 1))
+        font.setWeight(QFont.Weight.DemiBold)
+        painter.setFont(font)
+        painter.setPen(QColor(self._text))
+        painter.setBrush(QColor(self._background))
+        before = QRectF(frame.left() + 10, frame.top() + 10, 102, 25)
+        after = QRectF(frame.right() - 112, frame.top() + 10, 102, 25)
+        painter.drawRoundedRect(before, 7, 7)
+        painter.drawRoundedRect(after, 7, 7)
+        painter.drawText(before, Qt.AlignmentFlag.AlignCenter, "ORIGINAL")
+        painter.drawText(after, Qt.AlignmentFlag.AlignCenter, "RÉSULTAT")
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor(self._accent), 1))
+        painter.drawRoundedRect(frame, 10, 10)
+
+    def _move_divider(self, x: float) -> None:
+        frame = self._frame_rect()
+        if frame.width() <= 0:
+            return
+        self._position = max(0.03, min(0.97, (x - frame.left()) / frame.width()))
+        self.update()
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802 - Qt API
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._dragging = True
+            self._move_divider(event.position().x())
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:  # noqa: N802 - Qt API
+        if self._dragging:
+            self._move_divider(event.position().x())
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event) -> None:  # noqa: N802 - Qt API
+        if event.button() == Qt.MouseButton.LeftButton and self._dragging:
+            self._dragging = False
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event) -> None:  # noqa: N802 - Qt API
+        if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+            step = 0.01 if event.modifiers() & Qt.KeyboardModifier.ShiftModifier else 0.04
+            self._position = max(0.03, min(0.97, self._position + (step if event.key() == Qt.Key.Key_Right else -step)))
+            self.update()
             event.accept()
             return
         super().keyPressEvent(event)
@@ -898,6 +1077,7 @@ def format_duration(seconds: float | None) -> str:
 
 
 __all__ = [
+    "BeforeAfterCanvas",
     "CollapsibleSection",
     "EllipsisLabel",
     "ExportDock",
